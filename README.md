@@ -23,7 +23,7 @@
 
 * Lets create a new app called 'hello' in the 'djtest' project.
 * Look into ```hello/views.py``` file:
-  - Each view is something what the user want to see. To create a view we need to define a function.
+	- Each view is something what the user want to see. To create a view we need to define a function.
 	- Eg:
 
 ``` python
@@ -48,7 +48,7 @@ from django.shortcuts import render
 * We can create as many views as required by creating the functions.
 * For each views, we need a route to define when will a particular view should display.
 * For defining the app routes, we need to create a separate ```urls.py``` file for the particular app.(The project already have a main ```urls.py``` file)
-* Eg: ```hello/urls.py```
+	- Eg: ```hello/urls.py```
 ``` python
 from django.urls import path
 from . import views
@@ -87,7 +87,7 @@ from django.shortcuts import render
 def index(request):
     return render(request, "hello/index.html")
 ```
-- ```hello/templates/hello/index.html```
+* ```hello/templates/hello/index.html```
  ``` html
 <!DOCTYPE html>
 <html lang="en">
@@ -107,7 +107,7 @@ def index(request):
 
 * In the way we can directly render any html template using Django. Also, Django has added its own templating language on top of the existing HTML. So we can take that advantage and make the HTML templates more dynamic (That means, we can use more programming aspects on the HTML like variables, conditions, loops and other stuff). 
 
-- Eg: ```hello/views.py```
+	- Eg: ```hello/views.py```
 ``` python
 # Using a custom template
 # Here the optional third argument is called 'context' (It is a python dict).
@@ -175,120 +175,130 @@ def index(request):
 ```
 
 * We can also add the custom CSS. Django has a special build system to deal with the static files like CSS.
-* We need to put the CSS files inside a directory in the newyear app called 'static'. (Eg: create newyear/static/newyear/styles.css)
-	Eg: 
-		h1{
-  		 	font-family: sans-serif;
-   			font-size: 90px;
-   			text-align: center;
-		}
+* We need to put the CSS files inside a directory in the newyear app called 'static'. (Eg: create ```newyear/static/newyear/styles.css```)
+``` css
+h1{
+	font-family: sans-serif;
+	font-size: 90px;
+	text-align: center;
+}
+```
 
-	- On top of the index.html page, we need to add {% load static %}
-	- The link to the file will be, <link href="{% static 'newyear/styles.css' %}" rel="stylesheet">
-	- This way of linking is better than directly putting the url.
-	- We can check the output by restarting the server.
+* On the top of the ```index.html``` page, we need to add ```{% load static %}```
+* The link to the file will be, ```<link href="{% static 'newyear/styles.css' %}" rel="stylesheet">```
+* This way of linking is better than directly putting the url.
+* We can check the output by restarting the server.
+
+* Let's create an another app for a todo list to use the above features and and some other features. (Create a new app called 'tasks'. Register the app and the app routes on the project. And do the necessary steps as previous).
+
+1) ```tasks/urls.py```
+``` python
+from django.urls import path
+from . import views
+
+app_name = "tasks" #Unique app_mame for the urls in order to avoid namespace collision. But this version has no problem with namespacing.
+urlpatterns = [
+	path("", views.index, name="index"), #Default route
+	path("add", views.add, name="add")
+]
+```
+
+2) ```tasks/views.py```
+``` python
+from django.shortcuts import render
+
+# Global dummy tasks
+tasks = ["foo", "bar", "baz"]
+
+# Create your views here.
+def index(request):
+	return render(request, "tasks/index.html", {
+		"tasks": tasks
+	})
+
+def add(request):
+	return render(request, "tasks/add.html")
+```
+
+3) ```tasks/templates/tasks/layout.html```
+``` html
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Tasks</title>
+	</head>
+	<body>
+		{% block body %}
+		{% endblock %}
+	</body>
+</html>
+```
+
+5) ```tasks/templates/tasks/index.html```
+``` python
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+	<h1>Tasks</h1>
+	<ul>
+		{% for task in tasks %}
+		<li>{{ task }}</li>
+		{% endfor %}
+	</ul>
+	<a href="{% url 'tasks:add' %}">Add a New Task</a>
+{% endblock %}
+```
+
+7) ```tasks/templates/tasks/add.html```
+``` python
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+	 <h1>Add Task</h1>
+	 <form action="{% url 'tasks:add' %}" method="post">
+		{% csrf_token %}
+		<input type="text" name="task"/>
+		<input type="submit" />
+	</form>
+	<a href="{% url 'tasks:index' %}">View Tasks</a>
+{% endblock %}
+```
 
 
+* Template inheritance -  We can inherit the templates and avoid code duplication.
+	- Here both the above ```index.html``` page and the ```add.html``` page have many things in common and they have only difference in their body. So we can create a common layout file called ```layout.html``` to inherit all the common content to other pages.
+	- For linking to other routes from a template, we can use a link like below instead of directly specifying the 	route name.
+		```<a href="{% url 'index' %}">View Tasks</a>```
+	-> If there exist an ```app_name``` in the app route in order to avoid name sapce collision with other apps, we can specify that in the link ```<a href="{% url 'tasks:index' %}">View Tasks</a>```
 
-*** Lets create an another app for a todo list to use the above features and and some other features. (Create a new app called 'tasks'. Register the app and the app routes on the project. And do the necessary steps as previous)
-
-1) tasks/urls.py
-	
-	from django.urls import path
-	from . import views
-
-	app_name = "tasks" #Unique app_mame for the urls in order to avoid namespace collision. But this version has no 			problem with namespacing.
-	urlpatterns = [
-   		path("", views.index, name="index"), #Default route
-   		path("add", views.add, name="add")
-	]
-
-2) tasks/views.py
-	
-	from django.shortcuts import render
-
-	# Global dummy tasks
-	tasks = ["foo", "bar", "baz"]
-
-	# Create your views here.
-	def index(request):
-   		return render(request, "tasks/index.html", {
-      			"tasks": tasks
-   		})
-
-	def add(request):
-   		return render(request, "tasks/add.html")
-
-
-3) tasks/templates/tasks/layout.html
-	<!DOCTYPE html>
-	<html lang="en">
-   		<head>
-      			<meta charset="UTF-8">
-      			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-      			<title>Tasks</title>
-   		</head>
-   		<body>
-      			{% block body %}
-      			{% endblock %}
-   		</body>
-	</html>
-
-4) tasks/templates/tasks/index.html
-	{% extends "tasks/layout.html" %}
-
-	{% block body %}
-   		<h1>Tasks</h1>
-   		<ul>
-      			{% for task in tasks %}
-         		<li>{{ task }}</li>
-      			{% endfor %}
-   		</ul>
-   		<a href="{% url 'tasks:add' %}">Add a New Task</a>
-	{% endblock %}
-
-5) tasks/templates/tasks/add.html
-	{% extends "tasks/layout.html" %}
-
-	{% block body %}
-  		 <h1>Add Task</h1>
-  		 <form action="{% url 'tasks:add' %}" method="post">
-      			{% csrf_token %}
-      			<input type="text" name="task"/>
-      			<input type="submit" />
-   		</form>
-   		<a href="{% url 'tasks:index' %}">View Tasks</a>
-	{% endblock %}
-
-
-	-> Template inheritance -  We can inherit the templates and avoid code duplication.
-	-> Here both the above index.html page and the add.html page have many things in common and they have only 	difference in their body. So we can create a common layout file called 'layout.html' to inherit all the common 	content to other pages.
-	-> For linking to other routes from a template, we can use a link like below instead of directly specifying the 	route name.
-		<a href="{% url 'index' %}">View Tasks</a>
-	-> If there exist an 'app_name' in the app route in order to avoid name sapce collision with other apps, we can 	specify that in the link <a href="{% url 'tasks:index' %}">View Tasks</a>
-
-* Now all the routes works well but if we submit something on the add form it will throw some error.
-
- 	-> 403 - CSRF verification failed
-	-> CSRF - Cross Site Request Forgery - Submitting fake data through forms - Security vulnerability.
-	-> We can use a csrf token to verify the form submission.
-	-> Django has csrf validation turned on by default through a specific add-on known as Django Middleware (In 	settings.py file).
-	-> To validate, add {% csrf_token %} inside the particular form tag. It will add a hidden csrf token inside the 	form. The token will change each time based on the session.
-	-> If we look at the page source
-		<form action="/tasks/add" method="post">
-      			<input type="hidden" name="csrfmiddlewaretoken" value="tA7puflcApWmiR4QZH3abjZDw5nZvP3yyIE50a8x7isDmVkoyuYV15AF3vv87cVg">
-      			<input type="text" name="task"/>
-      			<input type="submit" />
-   		</form>
+* Now all the routes works well, but if we submit something on the add form it will throw some error.
+	- 403 - CSRF verification failed
+	- ```CSRF``` - Cross Site Request Forgery - Submitting fake data through forms - Security vulnerability.
+	- We can use a csrf token to verify the form submission.
+	- Django has csrf validation turned on by default through a specific add-on known as 'Django Middleware' (In ```settings.py``` file).
+	- To validate, add ```{% csrf_token %}``` inside the particular form tag. It will add a hidden csrf token inside the form. The token will change each time based on the session.
+	- If we look at the page source:
+``` html
+<form action="/tasks/add" method="post">
+	<input type="hidden" name="csrfmiddlewaretoken" value="tA7puflcApWmiR4QZH3abjZDw5nZvP3yyIE50a8x7isDmVkoyuYV15AF3vv87cVg">
+	<input type="text" name="task"/>
+	<input type="submit" />
+</form>
+```
 
 * Django also has built in tools for building the forms and validating data easier.
 
--> Sessions - All information about a particular session
--> If we set tasks in session, It will throw
-	OperationalError at /tasks/
-	no such table: django_session
+* Sessions - All information about a particular session. Here, if we set tasks in session, It will throw
+``` python
+OperationalError at /tasks/
+no such table: django_session
+````
 
--> This is becuase Django stores all the data inside tables but right now that table does not exist.
+* This is becuase Django stores all the data inside tables but right now that table does not exist.
 
--> To create the tables or apply the migrations run- python manage.py migrate
-	This command will allow us to create all of the default tables inside the Django's DB.
+* To create the tables or apply the migrations run- ```python manage.py migrate```
+	- This command will allow us to create all of the default tables inside the Django's DB.
+
+* For more information, refer the official Django documentation - https://docs.djangoproject.com/en/4.2/
